@@ -15,3 +15,4 @@
  */
 
 export * from "./async-redis-rate-limiter";
+export * from "./fixed-window-types";
