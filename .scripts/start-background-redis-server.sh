@@ -9,4 +9,7 @@ rm dump.rdb; # If not present: No such file or directory
 # Start redis-server and continue execution without waiting for the command to end
 # (this command will end after redis has been stopped)
 echo "Starting redis-server..."
-redis-server
+redis-server &
+
+# Wait for redis to be started, before continuing execution
+sleep 3;
