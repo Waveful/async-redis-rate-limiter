@@ -13,3 +13,4 @@ redis-server &
 
 # Wait for redis to be started, before continuing execution
 sleep 3;
+echo "A Redis instance is now running in background."
