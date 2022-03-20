@@ -17,19 +17,23 @@
 import { RedisClientType } from "redis";
 import { FixedWindowRateLimit, GetStatusFixedWindowResponse, IncrementFixedWindowResponse } from "./fixed-window-types";
 
-// Constants
-const LOG_REDIS_REPLIES: boolean = false;
+// Debug Settings
+export const DEBUG_SETTINGS = {
+  logRedisReplies: false,
+};
 
 /**
  * Increments the value in the current window. Returns an object with the information about the limit.
  * Example: maximum 10 visualization per user every 3 minutes => incrementFixedWindowRateLimiter(redisClient, new FixedWindowRateLimit(`view-${userId}`, 10, 3*60*1000))
- * @param redisClient the Redis client connected to the Redis DB to be used for saving rate limiting data.
+ * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
  * @param rateLimit object that specifies the action (actionId) and the rate options (limit and window).
  * @param increment how much to increment for this action, by default the increment is one (1 action = 1 increment), but in some cases it may be useful to make some actions "weight" more.
  */
 export async function incrementFixedWindowRateLimiter(redisClient: RedisClientType, rateLimit: FixedWindowRateLimit, increment: number = 1): Promise<IncrementFixedWindowResponse> {
   // Prepare values.
   const key = "ARRL:" + rateLimit.actionId;
+  let remainingTime: number;
+  let newValue: number;
 
   // Execute Redis action.
   const [setReply, incrByReply, pTtlReply] = await redisClient
@@ -41,24 +45,33 @@ export async function incrementFixedWindowRateLimiter(redisClient: RedisClientTy
     .INCRBY(key, increment) // Increment the counter.
     .PTTL(key) // Get the remaining time of the window.
     .exec() as [string | null | undefined, number, number];
-  if (LOG_REDIS_REPLIES) console.log("Replies: SET: " + setReply + " INCRBY: " + incrByReply + " PTTL: " + pTtlReply + ".");
+  if (DEBUG_SETTINGS.logRedisReplies) console.log("SET: " + setReply + ", INCRBY: " + incrByReply + ", PTTL: " + pTtlReply + ".");
+  newValue = incrByReply;
+  remainingTime = pTtlReply;
 
   // Check for unexpected values caused by changes in the limit.
   // pttlReply === -1: happens when the key does not have an expiration.
   // pttlReply > rateLimit.window: happens when the user of the rate limiter changed the window length making it smaller .
   if (pTtlReply && (pTtlReply === -1 || pTtlReply > rateLimit.window)) { // A negative Time-To-Live is returned when the key does not exist
     const pExpireReply = await redisClient.PEXPIRE(key, rateLimit.window); // Set new Time-To-Live.
-    if (LOG_REDIS_REPLIES) console.log("Reply: PEXPIRE: " + pExpireReply + ".");
+    if (DEBUG_SETTINGS.logRedisReplies) console.log("PEXPIRE: " + pExpireReply + ".");
+    remainingTime = rateLimit.window;
   }
 
   // Return result.
   return {
-    newValue: incrByReply,
-    remainingTime: pTtlReply,
-    isOverLimit: incrByReply > rateLimit.limit,
+    newValue: newValue,
+    remainingTime: remainingTime,
+    isOverLimit: newValue > rateLimit.limit,
   };
 }
 
+/**
+ * Returns information about the rate limiter specified by actionId.
+ * The returned information are the current value of the counter (currentValue) and the remaining time in the window in milliseconds (remainingTime).
+ * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
+ * @param actionId An identifier for the action to be rate-limited.
+ */
 export async function getStatusFixedWindowRateLimiter(redisClient: RedisClientType, actionId: string): Promise<GetStatusFixedWindowResponse> {
   // Prepare values.
   const key = "ARRL:" + actionId;
@@ -69,7 +82,7 @@ export async function getStatusFixedWindowRateLimiter(redisClient: RedisClientTy
     .GET(key) // Get the current value.
     .PTTL(key) // Get the remaining time of the window.
     .exec() as [string | null | undefined, number];
-  if (LOG_REDIS_REPLIES) console.log("Replies: GET: " + getReply + " PTTL: " + pTtlReply + ".");
+  if (DEBUG_SETTINGS.logRedisReplies) console.log("GET: " + getReply + ", PTTL: " + pTtlReply + ".");
 
   // Return result.
   const currentValue: number = getReply == null ? 0 : parseInt(getReply);
