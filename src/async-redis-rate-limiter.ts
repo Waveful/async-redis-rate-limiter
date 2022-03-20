@@ -85,7 +85,7 @@ export async function getStatusFixedWindowRateLimiter(redisClient: RedisClientTy
   if (DEBUG_SETTINGS.logRedisReplies) console.log("GET: " + getReply + ", PTTL: " + pTtlReply + ".");
 
   // Return result.
-  const currentValue: number = getReply == null ? 0 : parseInt(getReply);
+  const currentValue: number = getReply == null ? 0 : parseInt(getReply, 10);
   const remainingTime: number = pTtlReply < 0 ? 0 : pTtlReply;
   return {
     currentValue: currentValue,

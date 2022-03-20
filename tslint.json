@@ -1,3 +1,7 @@
 {
-  "extends": ["tslint:recommended", "tslint-config-prettier"]
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
+  "rules": {
+    "no-console": false, // Disallows the use of console.
+    "object-literal-shorthand": false // Force using concise form for defining object literal methods and properties.
+  }
 }
