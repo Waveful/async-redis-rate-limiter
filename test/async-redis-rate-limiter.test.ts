@@ -35,24 +35,24 @@ describe('asyncRedisRateLimiter', () => {
     await redisClient.quit();
   });
 
-  it('incrementFixedWindowRateLimiter, standard sequential usage', async () => {
+  it('incrementFixedWindowCounter, standard sequential usage', async () => {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const window: number = 250;
     const rateLimit: asyncRedisRateLimiter.FixedWindowRateLimit = new asyncRedisRateLimiter.FixedWindowRateLimit(actionId, limit, window);
-    let getStatusResponse: asyncRedisRateLimiter.GetStatusFixedWindowResponse;
+    let getStatusResponse: asyncRedisRateLimiter.GetFixedWindowStatusResponse;
     let incrementResponse: asyncRedisRateLimiter.IncrementFixedWindowResponse;
     let numberOfActionsExecutionsInWindow = 0;
 
     // Get initial status
-    getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+    getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
     expect(getStatusResponse.currentValue).to.be.equal(0);
     expect(getStatusResponse.remainingTime).to.be.equal(0);
 
     // First window.
     for (let actionNumber = 1; actionNumber <= limit + 2; actionNumber++) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, rateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, rateLimit);
       expect(incrementResponse.newValue).to.be.equal(actionNumber);
       expect(incrementResponse.remainingTime).to.be.approximately(window, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
       expect(incrementResponse.isOverLimit).to.be.equal(actionNumber > limit);
@@ -63,8 +63,8 @@ describe('asyncRedisRateLimiter', () => {
         await simulateActionToBeRateLimited();
       }
 
-      // Checking that getStatusFixedWindowRateLimiter works always as expected.
-      getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+      // Checking that getFixedWindowCounterStatus works always as expected.
+      getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
       expect(getStatusResponse.currentValue).to.be.equal(actionNumber);
       expect(getStatusResponse.remainingTime).to.be.approximately(window, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
     }
@@ -79,7 +79,7 @@ describe('asyncRedisRateLimiter', () => {
     // Second window that should work exactly as the first.
     for (let actionNumber = 1; actionNumber <= limit + 2; actionNumber++) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, rateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, rateLimit);
       expect(incrementResponse.newValue).to.be.equal(actionNumber);
       expect(incrementResponse.remainingTime).to.be.approximately(window, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
       expect(incrementResponse.isOverLimit).to.be.equal(actionNumber > limit);
@@ -90,8 +90,8 @@ describe('asyncRedisRateLimiter', () => {
         await simulateActionToBeRateLimited();
       }
 
-      // Checking that getStatusFixedWindowRateLimiter works always as expected.
-      getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+      // Checking that getFixedWindowCounterStatus works always as expected.
+      getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
       expect(getStatusResponse.currentValue).to.be.equal(actionNumber);
       expect(getStatusResponse.remainingTime).to.be.approximately(window, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
     }
@@ -100,19 +100,19 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
   }).timeout(20*1000);
 
-  it('incrementFixedWindowRateLimiter, standard parallel usage', async () => {
+  it('incrementFixedWindowCounter, standard parallel usage', async () => {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const window: number = 250;
     const rateLimit: asyncRedisRateLimiter.FixedWindowRateLimit = new asyncRedisRateLimiter.FixedWindowRateLimit(actionId, limit, window);
-    let getStatusResponse: asyncRedisRateLimiter.GetStatusFixedWindowResponse;
+    let getStatusResponse: asyncRedisRateLimiter.GetFixedWindowStatusResponse;
     let incrementResponse: asyncRedisRateLimiter.IncrementFixedWindowResponse;
     let numberOfActionsExecutionsInWindow = 0;
     let arrayOfPromises;
 
     async function singleExecution(index: number) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, rateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, rateLimit);
       console.log("Executed increment for index #" + index);
 
       // Perform action if not over limit.
@@ -123,7 +123,7 @@ describe('asyncRedisRateLimiter', () => {
     }
 
     // Get initial status
-    getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+    getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
     expect(getStatusResponse.currentValue).to.be.equal(0);
     expect(getStatusResponse.remainingTime).to.be.equal(0);
 
@@ -135,7 +135,7 @@ describe('asyncRedisRateLimiter', () => {
     await Promise.all(arrayOfPromises);
 
     // Get ending status
-    getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+    getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
     expect(getStatusResponse.currentValue).to.be.equal(10);
     expect(getStatusResponse.remainingTime).to.be.lessThanOrEqual(window);
 
@@ -154,7 +154,7 @@ describe('asyncRedisRateLimiter', () => {
     await Promise.all(arrayOfPromises);
 
     // Get ending status
-    getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+    getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
     expect(getStatusResponse.currentValue).to.be.equal(10);
     expect(getStatusResponse.remainingTime).to.be.lessThanOrEqual(window);
 
@@ -162,26 +162,26 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
   }).timeout(20*1000);
 
-  it('incrementFixedWindowRateLimiter, decrease window size during usage', async () => {
+  it('incrementFixedWindowCounter, decrease window size during usage', async () => {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const initialWindow: number = 99999;
     const newWindow: number = 250;
     const initialRateLimit: asyncRedisRateLimiter.FixedWindowRateLimit = new asyncRedisRateLimiter.FixedWindowRateLimit(actionId, limit, initialWindow);
     const newRateLimit: asyncRedisRateLimiter.FixedWindowRateLimit = new asyncRedisRateLimiter.FixedWindowRateLimit(actionId, limit, newWindow);
-    let getStatusResponse: asyncRedisRateLimiter.GetStatusFixedWindowResponse;
+    let getStatusResponse: asyncRedisRateLimiter.GetFixedWindowStatusResponse;
     let incrementResponse: asyncRedisRateLimiter.IncrementFixedWindowResponse;
     let numberOfActionsExecutionsInWindow = 0;
 
     // Get initial status
-    getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+    getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
     expect(getStatusResponse.currentValue).to.be.equal(0);
     expect(getStatusResponse.remainingTime).to.be.equal(0);
 
     // First window.
     for (let actionNumber = 1; actionNumber <= limit + 2; actionNumber++) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, initialRateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, initialRateLimit);
       expect(incrementResponse.newValue).to.be.equal(actionNumber);
       expect(incrementResponse.remainingTime).to.be.approximately(initialWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
       expect(incrementResponse.isOverLimit).to.be.equal(actionNumber > limit);
@@ -192,8 +192,8 @@ describe('asyncRedisRateLimiter', () => {
         await simulateActionToBeRateLimited();
       }
 
-      // Checking that getStatusFixedWindowRateLimiter works always as expected.
-      getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+      // Checking that getFixedWindowCounterStatus works always as expected.
+      getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
       expect(getStatusResponse.currentValue).to.be.equal(actionNumber);
       expect(getStatusResponse.remainingTime).to.be.approximately(initialWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
     }
@@ -204,13 +204,13 @@ describe('asyncRedisRateLimiter', () => {
     // Perform actions with new window length, while the initial window still did not expire.
     for (let actionNumber = 1; actionNumber <= limit + 2; actionNumber++) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, newRateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, newRateLimit);
       expect(incrementResponse.newValue).to.be.equal(limit + 2 + actionNumber);
       expect(incrementResponse.remainingTime).to.be.approximately(newWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
       expect(incrementResponse.isOverLimit).to.be.equal(true);
 
-      // Checking that getStatusFixedWindowRateLimiter works always as expected.
-      getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+      // Checking that getFixedWindowCounterStatus works always as expected.
+      getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
       expect(getStatusResponse.currentValue).to.be.equal(limit + 2 + actionNumber);
       expect(getStatusResponse.remainingTime).to.be.approximately(newWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
     }
@@ -222,7 +222,7 @@ describe('asyncRedisRateLimiter', () => {
     // Second window (with new window value) that should work exactly as the first.
     for (let actionNumber = 1; actionNumber <= limit + 2; actionNumber++) {
       // Increment action counter.
-      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowRateLimiter(redisClient, newRateLimit);
+      incrementResponse = await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, newRateLimit);
       expect(incrementResponse.newValue).to.be.equal(actionNumber);
       expect(incrementResponse.remainingTime).to.be.approximately(newWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
       expect(incrementResponse.isOverLimit).to.be.equal(actionNumber > limit);
@@ -233,8 +233,8 @@ describe('asyncRedisRateLimiter', () => {
         await simulateActionToBeRateLimited();
       }
 
-      // Checking that getStatusFixedWindowRateLimiter works always as expected.
-      getStatusResponse = await asyncRedisRateLimiter.getStatusFixedWindowRateLimiter(redisClient, actionId);
+      // Checking that getFixedWindowCounterStatus works always as expected.
+      getStatusResponse = await asyncRedisRateLimiter.getFixedWindowCounterStatus(redisClient, actionId);
       expect(getStatusResponse.currentValue).to.be.equal(actionNumber);
       expect(getStatusResponse.remainingTime).to.be.approximately(newWindow, actionNumber * MAX_TIME_FOR_REDIS_OPERATION);
     }

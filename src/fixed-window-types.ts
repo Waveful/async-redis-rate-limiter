@@ -41,7 +41,7 @@ export type IncrementFixedWindowResponse = {
   isOverLimit: boolean; // True if newValue is over the limit (rate exceeded).
 };
 
-export type GetStatusFixedWindowResponse = {
+export type GetFixedWindowStatusResponse = {
   currentValue: number; // Number of actions done on the key during the window.
   remainingTime: number; // Milliseconds remaining until the window resets and therefore the counter restarts.
 };

@@ -15,7 +15,7 @@
  */
 
 import { RedisClientType } from "redis";
-import { FixedWindowRateLimit, GetStatusFixedWindowResponse, IncrementFixedWindowResponse } from "./fixed-window-types";
+import { FixedWindowRateLimit, GetFixedWindowStatusResponse, IncrementFixedWindowResponse } from "./fixed-window-types";
 
 // Debug Settings
 export const DEBUG_SETTINGS = {
@@ -24,12 +24,12 @@ export const DEBUG_SETTINGS = {
 
 /**
  * Increments the value in the current window. Returns an object with the information about the limit.
- * Example: maximum 10 visualization per user every 3 minutes => incrementFixedWindowRateLimiter(redisClient, new FixedWindowRateLimit(`view-${userId}`, 10, 3*60*1000))
+ * Example: maximum 10 visualization per user every 3 minutes => incrementFixedWindowCounter(redisClient, new FixedWindowRateLimit(`view-${userId}`, 10, 3*60*1000))
  * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
  * @param rateLimit object that specifies the action (actionId) and the rate options (limit and window).
  * @param increment how much to increment for this action, by default the increment is one (1 action = 1 increment), but in some cases it may be useful to make some actions "weight" more.
  */
-export async function incrementFixedWindowRateLimiter(redisClient: RedisClientType, rateLimit: FixedWindowRateLimit, increment: number = 1): Promise<IncrementFixedWindowResponse> {
+export async function incrementFixedWindowCounter(redisClient: RedisClientType, rateLimit: FixedWindowRateLimit, increment: number = 1): Promise<IncrementFixedWindowResponse> {
   // Prepare values.
   const key = "ARRL:" + rateLimit.actionId;
   let remainingTime: number;
@@ -72,7 +72,7 @@ export async function incrementFixedWindowRateLimiter(redisClient: RedisClientTy
  * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
  * @param actionId An identifier for the action to be rate-limited.
  */
-export async function getStatusFixedWindowRateLimiter(redisClient: RedisClientType, actionId: string): Promise<GetStatusFixedWindowResponse> {
+export async function getFixedWindowCounterStatus(redisClient: RedisClientType, actionId: string): Promise<GetFixedWindowStatusResponse> {
   // Prepare values.
   const key = "ARRL:" + actionId;
 
