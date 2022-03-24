@@ -14,28 +14,29 @@
  * limitations under the License.
  */
 
-import {expect, assert} from "chai";
 import * as asyncRedisRateLimiter from "../src/index";
-import * as redis from "redis";
 import * as customUuid from "custom-uuid";
+import * as redis from "redis";
+import { assert, expect } from "chai";
+import { performance } from "perf_hooks";
 
 // Constants
 const MAX_TIME_FOR_REDIS_OPERATION: number = 50;
 
-describe('asyncRedisRateLimiter', () => {
+describe('asyncRedisRateLimiter', function() {
 
   let redisClient: redis.RedisClientType;
 
-  before(async () => {
+  before(async function() {
     redisClient = await getRedisClient();
     asyncRedisRateLimiter.DEBUG_SETTINGS.logRedisReplies = true;
   });
 
-  after(async () => {
+  after(async function() {
     await redisClient.quit();
   });
 
-  it('incrementFixedWindowCounter, standard sequential usage', async () => {
+  it('incrementFixedWindowCounter, standard sequential usage', async function() {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const window: number = 250;
@@ -73,7 +74,7 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
 
     // Wait for first window to expire.
-    await new Promise(resolve => setTimeout(resolve, window + 1));
+    await new Promise((resolve) => setTimeout(resolve, window + 1));
     numberOfActionsExecutionsInWindow = 0;
 
     // Second window that should work exactly as the first.
@@ -100,7 +101,7 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
   }).timeout(20*1000);
 
-  it('incrementFixedWindowCounter, standard parallel usage', async () => {
+  it('incrementFixedWindowCounter, standard parallel usage', async function() {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const window: number = 250;
@@ -143,7 +144,7 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
 
     // Wait for first window to expire.
-    await new Promise(resolve => setTimeout(resolve, window + 1));
+    await new Promise((resolve) => setTimeout(resolve, window + 1));
     numberOfActionsExecutionsInWindow = 0;
 
     // Second window that should work exactly as the first.
@@ -162,7 +163,7 @@ describe('asyncRedisRateLimiter', () => {
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
   }).timeout(20*1000);
 
-  it('incrementFixedWindowCounter, decrease window size during usage', async () => {
+  it('incrementFixedWindowCounter, decrease window size during usage', async function() {
     const actionId: string = customUuid.generateShortUuid();
     const limit: number = 3;
     const initialWindow: number = 99999;
@@ -216,7 +217,7 @@ describe('asyncRedisRateLimiter', () => {
     }
 
     // Wait for the new window to expire.
-    await new Promise(resolve => setTimeout(resolve, newWindow + 1));
+    await new Promise((resolve) => setTimeout(resolve, newWindow + 1));
     numberOfActionsExecutionsInWindow = 0;
 
     // Second window (with new window value) that should work exactly as the first.
@@ -246,7 +247,7 @@ describe('asyncRedisRateLimiter', () => {
 
 
 async function simulateActionToBeRateLimited() {
-  await new Promise(resolve => setTimeout(resolve, 1));
+  await new Promise((resolve) => setTimeout(resolve, 1));
 }
 
 let globalRedisClient: redis.RedisClientType;
@@ -327,7 +328,7 @@ async function getRedisClient(): Promise<redis.RedisClientType> {
     console.timeEnd("createRedisClient");
 
     await globalRedisClient.connect();
-    console.timeEnd("connectRedisClient")
+    console.timeEnd("connectRedisClient");
   }
   return globalRedisClient;
 }
