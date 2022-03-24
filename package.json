@@ -1,56 +1,67 @@
 {
   "name": "async-redis-rate-limiter",
-  "description": "Rate-limit in Node.js, backed by Redis.",
+  "description": "Rate-limiter in Node.js, powered by Redis.",
   "version": "1.0.3",
   "license": "Apache-2.0",
   "author": "Waveful",
+  "homepage": "https://github.com/Waveful/async-redis-rate-limiter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Waveful/async-redis-rate-limiter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Waveful/async-redis-rate-limiter/issues"
+  },
+  "type": "commonjs",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14.17.0"
   },
   "main": "build/index.js",
   "files": [
     "build/**/*"
   ],
-  "keywords": [
-    "rate limiter",
-    "rate limit",
-    "throttle",
-    "limiting"
-  ],
   "scripts": {
-    "build": "rm -rf build && tsc -p .",
-    "lint": "tslint -p tsconfig.json",
-    "prettier": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
-    "start-background-redis": "chmod +x ./.scripts/start-background-redis-server.sh && sh ./.scripts/start-background-redis-server.sh",
-    "stop-redis": "killall redis-server",
-    "test": "chmod +x ./.scripts/exec-tests.sh && sh ./.scripts/exec-tests.sh",
-    "coverage": "nyc --reporter=lcov --reporter=text npm run test",
+    "build": "rm -rf build && tsc --project .",
     "prepare": "npm run build",
-    "preversion": "npm test && npm run lint",
+    "preversion": "npm run lint && npm run test",
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
+    "lint": "eslint .",
+    "start-background-redis": "chmod +x ./.scripts/start-background-redis-server.sh && sh ./.scripts/start-background-redis-server.sh",
+    "test": "chmod +x ./.scripts/exec-tests.sh && sh ./.scripts/exec-tests.sh",
+    "coverage": "nyc --reporter=lcov --reporter=text npm run test",
+    "stop-redis": "killall redis-server",
     "create-patch-version": "npm version patch && npm publish",
     "create-minor-version": "npm version minor && npm publish",
     "create-major-version": "npm version major && npm publish"
   },
-  "repository": "Waveful/async-redis-rate-limiter",
   "dependencies": {
-    "redis": "4.0.4"
+    "redis": "^4.0.4"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^9.1.0",
-    "@types/node": "^17.0.21",
+    "@types/node": "^17.0.22",
+    "@typescript-eslint/eslint-plugin": "^5.16.0",
+    "@typescript-eslint/parser": "^5.16.0",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
-    "custom-uuid": "^2.2.2",
+    "custom-uuid": "^2.2.3",
+    "eslint": "^8.11.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-mocha": "^10.0.3",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-security": "^1.4.0",
     "mocha": "^9.2.2",
     "nyc": "^15.1.0",
-    "prettier": "^2.6.0",
     "ts-node": "^10.7.0",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0",
     "typescript": "^4.6.2"
-  }
+  },
+  "keywords": [
+    "rate limiter",
+    "rate limit",
+    "throttle",
+    "limiting"
+  ]
 }
