@@ -23,7 +23,7 @@ export const DEBUG_SETTINGS = {
 };
 
 /**
- * Increments the value in the current window. Returns an object with the information about the limit.
+ * Increments the value in the current window. Returns an object with the information about the fixed-window counter.
  * Example: maximum 10 visualization per user every 3 minutes => incrementFixedWindowCounter(redisClient, new FixedWindowRateLimit(`view-${userId}`, 10, 3*60*1000))
  * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
  * @param rateLimit object that specifies the action (actionId) and the rate options (limit and window).
@@ -68,7 +68,7 @@ export async function incrementFixedWindowCounter(redisClient: RedisClientType, 
 }
 
 /**
- * Returns information about the rate limiter specified by actionId.
+ * Returns information about the fixed-window counter specified by actionId.
  * The returned information are the current value of the counter (currentValue) and the remaining time in the window in milliseconds (remainingTime).
  * @param redisClient the Redis client connected to the Redis DB, used for rate limiting data.
  * @param actionId An identifier for the action to be rate-limited.
