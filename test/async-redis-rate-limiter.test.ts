@@ -243,6 +243,37 @@ describe('asyncRedisRateLimiter', function() {
     // Check that the number of actions executed is as expected.
     expect(numberOfActionsExecutionsInWindow).to.be.equal(limit);
   }).timeout(20*1000);
+
+  // eslint-disable-next-line mocha/no-skipped-tests
+  xit('Test throughput', async function() {
+    asyncRedisRateLimiter.DEBUG_SETTINGS.logRedisReplies = false;
+    const actionId: string = customUuid.generateShortUuid();
+    const limit: number = 1000 * 1000 * 1000;
+    const window: number = 60*60*1000;
+    const numberOfSequentialActions = 50 * 1000;
+    const numberOfParallelPromises = 200;
+    const rateLimit: asyncRedisRateLimiter.FixedWindowRateLimit = new asyncRedisRateLimiter.FixedWindowRateLimit(actionId, limit, window);
+
+    async function performManySequentialIncrements() {
+      for (let j = 0; j < numberOfSequentialActions; j++) {
+        await asyncRedisRateLimiter.incrementFixedWindowCounter(redisClient, rateLimit);
+      }
+    }
+
+    const promises = [];
+    const startTime = performance.now();
+    for (let i = 0; i < numberOfParallelPromises; i++) {
+      promises.push(performManySequentialIncrements());
+    }
+    await Promise.all(promises);
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    const numberOfActions = numberOfParallelPromises * numberOfSequentialActions;
+    const actionsPerMinute = numberOfActions / (duration / (60 * 1000));
+    console.log(`${numberOfActions} actions completed in ${duration} milliseconds (${actionsPerMinute} actions / min).`);
+    // On a test performed the 25 March 2022, using Redis 6.2.6:
+    // 10000000 actions completed in 105435.5647919178 milliseconds (5690679.432354055 actions / min).
+  }).timeout(5*60*1000);
 });
 
 
