@@ -1,7 +1,7 @@
 {
   "name": "async-redis-rate-limiter",
   "description": "Rate-limiter in Node.js, powered by Redis.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "Apache-2.0",
   "author": "Waveful",
   "homepage": "https://github.com/Waveful/async-redis-rate-limiter",
