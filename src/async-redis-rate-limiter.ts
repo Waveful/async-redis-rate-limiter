@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { RedisClientType } from "redis";
 import { FixedWindowRateLimit, GetFixedWindowStatusResponse, IncrementFixedWindowResponse } from "./fixed-window-types";
+import { RedisClientType } from "redis";
 
 // Debug Settings
 export const DEBUG_SETTINGS = {
@@ -46,6 +46,7 @@ export async function incrementFixedWindowCounter(redisClient: RedisClientType, 
     .PTTL(key) // Get the remaining time of the window.
     .exec() as [string | null | undefined, number, number];
   if (DEBUG_SETTINGS.logRedisReplies) console.log("SET: " + setReply + ", INCRBY: " + incrByReply + ", PTTL: " + pTtlReply + ".");
+  // eslint-disable-next-line prefer-const
   newValue = incrByReply;
   remainingTime = pTtlReply;
 
